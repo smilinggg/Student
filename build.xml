@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<project name="lis" default="build" basedir=".">
+<!-- 
+src:java source code
+test:java test source code folder
+resources:configuration file folder
+
+dist:The jar and classes. 
+   -classes 
+   
+report:Test result report and checkstyle report folder. 
+   -checkstyle 
+   -tests 
+   -findBugs 
+   
+doc:Do not delete the folder. 
+    Javadoc and checksyle configuration files. 
+   -javadoc
+   -pmd 
+   -codestyle  
+   -findBugs 
+-->
+   
+	<property name="src.dir" value="${basedir}/src"/>
+  <!-- ============lib dir   ============================== -->
+	<property name="lib.dir" value="${basedir}/WebContent/WEB-INF/lib"/>
+  <!-- ============config dir default:config.dir=========== -->
+  <property name="config.dir" value="${basedir}/config"/>
+  <property name="sit1.config.dir" value="${basedir}/conig/sit1"/>
+  <property name="uat1.config.dir" value="${basedir}/conig/uat1"/>
+  <!-- ============destination dir ======================== -->
+	<property name="dist.dir" value="${basedir}/dist"/>
+	<property name="dist.classes" value="${dist.dir}/classes"/>
+  <!-- ============report&docs dir ========================= -->
+	<property name="docs.dir" value="${basedir}/doc"/>
+  <property name="report.dir" value="${basedir}/report"/>
+  <!-- ============package name ======================= -->
+	<property name="war.file" value="lis.war"/>
+	<!-- ============checkstyle  ======================= -->
+	<property name="checkstyle.dir" value="${basedir}/checkstyle"/>
+	
+
+	<!-- All Need jar-->
+	<path id="classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="${dist.dir}" excludes="**/.svn" />
+		<delete dir="${report.dir}" excludes="**/.svn" />
+		<delete dir="${dist.classes}" excludes="**/.svn" />
+	</target>
+
+	<target name="prepare" depends="clean" description="Create the target directories">
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${dist.classes}" />
+	  <mkdir dir="${config.dir}" />
+		<!--
+		<mkdir dir="${report.dir}" />
+		<mkdir dir="${report.dir}/tests" />
+		<mkdir dir="${report.dir}/checkstyle" />
+		-->
+	</target>
+	<!-- 
+	    =================================src compile class=====================	
+	-->
+	<target name="compile" depends="prepare" description="=======COMPILE=====">
+		<javac destdir="${dist.classes}" debug="true" encoding="GBK">
+			<src path="${src.dir}" />
+			<exclude name="**/*Test.*"/>
+			<classpath>
+				<path refid="classpath" />
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="config"  depends="prepare" description="=======Config=====">
+    <copy todir="${dist.classes}">
+			<fileset dir="${config.dir}">
+				<include name="**/*.*" />				
+			</fileset>
+		</copy>
+	</target>
+	
+  <target name="configSit1"  depends="prepare" description="=======Config SIT1=====">
+    <copy todir="${dist.classes}">
+			<fileset dir="${sit1.config.dir}">
+				<include name="**/*.*" />				
+			</fileset>
+		</copy>
+  </target>
+  
+  <target name="configUat1"  depends="prepare" description="=======Config UAT1=====">
+    <copy todir="${dist.classes}">
+			<fileset dir="${uat1.config.dir}">
+				<include name="**/*.*" />				
+			</fileset>
+		</copy>
+  </target>
+	<!--=================================  javadoc===================== -->
+	<!--
+	<target name="javadoc">
+		<mkdir dir="${docs.dir}/javadoc" />
+		<javadoc encoding="utf-8" sourcepath="${src.dir}" destdir="${docs.dir}/javadoc">
+			<classpath refid="classpath"/>
+		</javadoc>
+		<echo message="...........Javadoc command complete...."/>
+	</target>
+	-->
+	<!--================================= test and create report===================== -->
+	<!-- 
+	<target name="tests" depends="compile"> 
+	<junit printsummary="on" fork="true" haltonfailure="false" failureproperty="tests.failed" showoutput="true"> 
+	<classpath> 
+	<fileset dir="${classpath}" includes="**/*.jar" /> 
+	<pathelement path="${dist.classes}" /> 
+	</classpath> 
+	<formatter type="xml" /> 
+	<batchtest todir="${report.dir}/tests"> 
+	<fileset dir="${dist.classes}"> 
+	<include name="**/*Test.*" /> 
+	</fileset> 
+	</batchtest> 
+	</junit> 
+	<junitreport todir="${report.dir}/tests"> 
+	<fileset dir="${report.dir}/tests"> 
+	<include name="TEST-*.xml" /> 
+	</fileset> 
+	<report format="frames" todir="${report.dir}/tests" /> 
+	</junitreport> 
+	</target> 
+	-->
+	<!-- 
+	================================= create checkstyle report===================== 
+	Please notify:modify the param of checkstyle-frames-errors.xsl and checkstyle-frames.xsl files as below 
+	<xsl:param name="output.dir" select="'report/checkstyle'"/> 
+	-->
+ 
+  <taskdef resource="checkstyletask.properties" classpath="${checkstyle.dir}/checkstyle-5.7-all.jar" />     
+
+	<target name="checkstyle" depends="prepare" description="Generates a report of code convention violations.">
+		<checkstyle 
+			config="${checkstyle.dir}/sun_checks.xml"
+			failureProperty="checkstyle.failure"  failOnViolation="false">
+			<formatter type="xml" toFile="${checkstyle.dir}/checkstyle_result.xml" />
+			<fileset dir="${src.dir}" includes="**/*.java" excludes="**/*Test.java" />
+		</checkstyle>
+
+		<style in="${checkstyle.dir}/checkstyle_result.xml" out="${checkstyle.dir}/blank_report.html" style="${checkstyle.dir}/checkstyle-simple.xsl"/>
+
+	</target>
+	
+
+  
+
+	<!-- 
+	================================= WAR Task=====================
+	${dist.classes} 
+	-->
+	<target name="war" depends="compile">
+		<war destfile="${dist.dir}/${war.file}" webxml="${basedir}/WebContent/WEB-INF/web.xml">
+			<fileset dir="${src.dir}">
+				 <include name="**/**.*"/>
+				 <exclude name="**/*.jar"/>  
+         <exclude name="**/*.class"/>  
+			</fileset>
+			<lib dir="${lib.dir}" />  
+      <classes dir="${dist.classes}" /> 
+      
+		</war>
+	</target>
+
+	   <!-- 
+	        default ant build
+	        Sit1config：ant buildSit1
+          UAT1config: ant buildUat1
+     -->
+   
+	<target name="build" depends="checkstyle,config,war" description="build project" />
+	<target name="buildSit1" depends="configSit1,war" description="build SIT1 project" />
+	<target name="buildUat1" depends="configUat1,war" description="build UAT1 project" />
+</project>
+
+
+
